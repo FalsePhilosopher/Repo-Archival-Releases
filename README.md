@@ -1,2 +1,5 @@
 # Repo-Archival-Rleases
-zstd compressed repo releases
+If you have a large repo and a lot of large submodules then doing a `git clone --recursive` job will download the sometimes hefty baggage of the .git folder with it. Some people might not have the bandwidth or data allowance to download 7GB worth of a repo and all it's submodules, so it's in their interest to download a 2GB archive instead. So for those end users it would be ideal if there was an already .git folder stripped and compressed archive they could download with a BLAKE3 or SHA256 sums included for the archive and it's contents. The release script will update your repo, then copy it to a release folder, rm the .git folder, run a BLAKE3 and SHA256 check, compress the folder, do a SHA256 sum on the folder and update the checksum values in the notes.md, dl.sh, and dl.ps1 scripts. From there your users can use fileless script execution method of downloading, extracting, and hash checking the archive.
+
+Github has a 2GB file limit on release files, so the single file release currently included works and I am working on a larger then 2GB multi auto release/multi download version.
+
