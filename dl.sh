@@ -2,7 +2,7 @@
 SHA256='4f07311951cb281362c57583e9fff62d67d84a89'
 Link='https://github.com/Sample-User/Sample-Repo/releases/latest/download/Sample-Repo.tar.zst'
 USER='Sample-Text'
-REPO="Sample-Text"
+REPO='Sample-Text'
 # https://github.com/FalsePhilosopher/Repo-Archival-Rleases
 obtainium() {
   if ! command -v gh &> /dev/null; then
@@ -29,12 +29,10 @@ check() {
     else
       echo "Using sha256sum for verification"
       sha256sum -c SHA256
-      echo "There will be a single hash check error as there are two different hash files included for windows compatibility and one will throw an error for the other, so if there is a single hash error then it was successful."
     fi
   else
     echo "Using b3sum for verification"
     b3sum -c B3.SUM
-    echo "There will be a single hash check error as there are two different hash files included for windows compatibility and one will throw an error for the other, so if there is a single hash error then it was successful."
   fi
 }
 
