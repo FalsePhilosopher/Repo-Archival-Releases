@@ -108,9 +108,9 @@ cat "$RELEASE_FOLDER/SHA256" | sed 's/ .*//' > "$TMP_HASH_FILE" || { echo "Faile
 LATEST_HASH=$(<"$TMP_HASH_FILE") || { echo "Failed to retrieve latest SHA256 hash." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "Expected hash value" | tee -a "$LOG"
 cat "$RELEASE_FOLDER/SHA256" | tee -a "$LOG"
-sed -i "2s/.*/SHA256='$LATEST_HASH'/" "$SHDL" || { echo "Failed to update SHA256 in dl.sh." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+sed -i "4s/.*/SHA256='$LATEST_HASH'/" "$SHDL" || { echo "Failed to update SHA256 in dl.sh." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "dl.sh SHA256 value." | tee -a "$LOG"
-sed -n '2p' $SHDL | tee -a "$LOG"
+sed -n '4p' $SHDL | tee -a "$LOG"
 sed -i "2s/.*/\$SHA256 = \"$LATEST_HASH\"/" "$PS1DL" || { echo "Failed to update SHA256 in dl.ps1." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "dl.ps1 SHA256 value" | tee -a "$LOG"
 sed -n '2p' $PS1DL | tee -a "$LOG"

@@ -1,8 +1,8 @@
 #!/bin/bash
+USER='FalsePhilosopher'
+REPO='Repo-Archival-Rleases'
 SHA256='4f07311951cb281362c57583e9fff62d67d84a89'
-Link='https://github.com/Sample-User/Sample-Repo/releases/latest/download/Sample-Repo.tar.zst'
-USER='Sample-Text'
-REPO='Sample-Text'
+Link='https://github.com/$USER/$REPO/releases/latest/download/$REPO.tar.zst'
 # https://github.com/FalsePhilosopher/Repo-Archival-Rleases
 obtainium() {
   if ! command -v gh &> /dev/null; then
