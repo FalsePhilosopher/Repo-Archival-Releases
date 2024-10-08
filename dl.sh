@@ -16,7 +16,7 @@ obtainium() {
     fi
   else
     echo "Using GitHub CLI to download"
-    gh release download -p '$REPO.tar.zst' -R $USER/$REPO
+    gh release download -p '*.tar.zst' -R $USER/$REPO
   fi
 }
 
