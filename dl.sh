@@ -56,6 +56,6 @@ fi
 
 cd "$HOME/Downloads/$REPO/" || { echo "Failed to change to $REPO directory"; exit 1; }
 
-check && echo "All Ok" || echo "checksum failure"
+check && echo "All checksums ok" || echo "checksum failure"
 
 echo "All done"
