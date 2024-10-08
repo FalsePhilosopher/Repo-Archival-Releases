@@ -5,3 +5,4 @@ The release script will update your repo, then copy it to a release folder, rm t
 
 Github has a 2GB file limit on release files, so the single file release currently included works and I am working on a larger then 2GB multi auto release/multi download version.
 
+The windows download script is untested, I tested the SHA256.ps1 script on powershell for linux. So both SHA256.ps1 and dl.ps1 need to be tested on a win machine before they can be pushed to production.
