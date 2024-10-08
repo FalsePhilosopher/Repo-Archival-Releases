@@ -1,5 +1,5 @@
 #!/bin/bash
-# https://github.com/FalsePhilosopher/Repo-Archival-Rleases
+# https://github.com/FalsePhilosopher/Repo-Archival-Releases
 # This script automates the process of creating monthly releases for a github repo.
 # Dependencies: b3sum (https://github.com/BLAKE3-team/BLAKE3) and zstd.
 # This setup requires SHA256.ps1, dl.ps1, dl.sh, notes.md and your repo all in the same parent folder aka the WORKING_DIR.
