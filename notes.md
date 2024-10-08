@@ -1,5 +1,6 @@
 # Compressed Snapshot Releases
 SHA256=5446978e0fa93f1feb97bfea2b67e502063c3d697ebc4fbbf01af8a212cde2e2
+
 Link=https://github.com/Sample-User/Sample-Repo/releases/latest/download/Sample-Repo.tar.zst
 
 
