@@ -24,7 +24,7 @@ RELEASE_TAG="$RELEASE_VERSION"
 DISPLAY_LABEL="Release $RELEASE_VERSION"
 
 REPO='sample-name'
-WORKING_DIR="/sample/path/to/parent/folder"
+WORKING_DIR="/sample/path/to/parent/folder/"
 BASE_FOLDER="$WORKING_DIR/Releases"
 RELEASE_FOLDER="$BASE_FOLDER/$RELEASE_VERSION"
 SHDL="$RELEASE_FOLDER/dl.sh"
