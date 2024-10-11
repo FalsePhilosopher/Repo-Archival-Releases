@@ -17,20 +17,23 @@
 #0 0 * * * /path/to/this/script.sh
 
 
+#!/bin/bash
 
+SIGN="Y"    # Set SIGN to "Y" or "N" for GPG signing
+REPO='sample-name'
+WORKING_DIR="/sample/path/to/parent/folder/"
 
 RELEASE_VERSION=$(date +"%d-%m-%y")   #DD-MM-YY
 RELEASE_TAG="$RELEASE_VERSION"
 DISPLAY_LABEL="Release $RELEASE_VERSION"
 
-REPO='sample-name'
-WORKING_DIR="/sample/path/to/parent/folder/"
 BASE_FOLDER="$WORKING_DIR/Releases"
 RELEASE_FOLDER="$BASE_FOLDER/$RELEASE_VERSION"
 SHDL="$RELEASE_FOLDER/dl.sh"
 PS1DL="$RELEASE_FOLDER/dl.ps1"
 NOTES="$RELEASE_FOLDER/notes.md"
 ARCHIVE="$RELEASE_FOLDER/$REPO.tar.zst"
+SIG="$ARCHIVE.sig"
 LOG="$RELEASE_FOLDER/$RELEASE_VERSION.log"
 
 copy() {
@@ -43,19 +46,13 @@ copy() {
     cp notes.md "$RELEASE_FOLDER" && echo "notes.md copying complete." | tee -a "$LOG" || { echo "Failed to copy notes.md." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 }
 
-gh_sync() {
-    cd "$WORKING_DIR/$REPO" || { echo "Failed to navigate to $REPO folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
-    echo "Pulling repo updates" | tee -a "$LOG"
-    gh repo sync && echo "Pulling updates complete." | tee -a "$LOG" || { echo "Failed to update $REPO." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
-}
-
 trim() {
     cd "$RELEASE_FOLDER/$REPO" || { echo "Failed to navigate to $REPO release repo folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
     echo "Trimming .git folder" | tee -a "$LOG"
     rm -rf .git && sleep 10 && echo "Release folder git history removed." | tee -a "$LOG" || { echo "Failed to remove release repo folder git history." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 }
 
-    check() {
+check() {
     echo "Calculating BLAKE3 checksums..." | tee -a "$LOG"
     find -type f \( -not -name "B3.SUM" \) -exec b3sum '{}' \; >> B3.SUM && echo "BLAKE3 checksum complete." | tee -a "$LOG" || { echo "BLAKE3 checksum error." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
     echo "Calculating SHA256 checksums..." | tee -a "$LOG"
@@ -63,6 +60,29 @@ trim() {
     # trimming of the SHA256 checksum is necessary to make it *nix/powershell compatible
     sed 's/[.][/]//1' -i SHA256 && echo "SHA256 checksum trimming complete." | tee -a "$LOG" || { echo "SHA256 checksum trimming error." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 }
+
+sign() {
+if [[ "$SIGN" == "y" || "$SIGN" == "Y" ]]; then
+    echo "Signing the release"
+    cd "$RELEASE_FOLDER" || { echo "Failed to navigate to release folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+    gpg --sign "$ARCHIVE" && echo "$ARCHIVE signed successfully." | tee -a "$LOG" || { echo "Failed to sign $ARCHIVE." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+else
+    echo "Skipping GPG signing." | tee -a "$LOG"
+fi
+}
+
+gh_release () {
+echo "Creating Github release" | tee -a "$LOG"
+cd "$WORKING_DIR/$REPO" || { echo "Failed to navigate back to $REPO repo folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+
+if [[ "$SIGN" == "y" || "$SIGN_RELEASE" == "Y" ]]; then
+    echo "Pushing signed release"
+    gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "$NOTES" --latest "$ARCHIVE" "$SIG" "$SHDL" "$PS1DL" && echo "GitHub release created successfully." | tee -a "$LOG" || { echo "Failed to create signed GitHub release." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+else
+    gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "$NOTES" --latest "$ARCHIVE" "$SHDL" "$PS1DL" && echo "GitHub release created successfully." | tee -a "$LOG" || { echo "Failed to create GitHub release." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+fi
+}
+
 
 mkdirs() {
 if [ ! -d "$BASE_FOLDER" ]; then
@@ -97,6 +117,8 @@ check
 cd "$RELEASE_FOLDER" || { echo "Failed to navigate to release folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "Compressing $REPO release folder." | tee -a "$LOG"
 tar --use-compress-program "zstd -T0 -19" -cvf "$REPO.tar.zst" "$REPO" && sleep 30 && echo "$REPO release folder compression complete." || { echo "Failed to compress $REPO release folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+sign
+
 echo "Generating SHA256 checksum for $REPO archive..." | tee -a "$LOG"
 sha256sum "$RELEASE_FOLDER/$REPO.tar.zst" > "$RELEASE_FOLDER/SHA256" && sleep 15 && echo "Generating SHA256 complete." | tee -a "$LOG" || { echo "Failed to generate SHA256 checksum." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "Removing $REPO release folder." | tee -a "$LOG"
@@ -120,7 +142,5 @@ sed -n '2p' $NOTES | tee -a "$LOG"
 rm "$TMP_HASH_FILE" || { echo "Failed to remove temporary hash file." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "SHA256 values updated." | tee -a "$LOG" && sleep 5
 
-cd "$WORKING_DIR/$REPO" || { echo "Failed to navigate back to $REPO repo folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
-echo "Creating Github release" | tee -a "$LOG"
-gh release create "$RELEASE_TAG" --title "$RELEASE_TAG" --notes-file "$NOTES" --latest "$ARCHIVE" "$SHDL" "$PS1DL" && echo "GitHub release created." | tee -a "$LOG" || { echo "Failed to create GitHub release." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+gh_release
 echo "Script finished sucessfully at $(date)" | tee -a "$LOG"

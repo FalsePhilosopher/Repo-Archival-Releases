@@ -4,7 +4,11 @@ REPO='Sample'
 SHA256='4f07311951cb281362c57583e9fff62d67d84a89'
 Link='https://github.com/$USER/$REPO/releases/latest/download/$REPO.tar.zst'
 # https://github.com/FalsePhilosopher/Repo-Archival-Releases
+
 obtainium() {
+  # Ask if the user wants to GPG verify the download
+  read -p "IF AND ONLY IF the repo admin offers GPG signed releases, do you want to GPG verify the download? (y/n): " VERIFY_DOWNLOAD
+
   if ! command -v gh &> /dev/null; then
     echo "GitHub CLI not found. Checking aria2c..."
     if ! command -v aria2c &> /dev/null; then
@@ -12,11 +16,40 @@ obtainium() {
       exit 1
     else
       echo "Using aria2c to download"
-      aria2c --checksum=sha-256=$SHA256 $Link
+      
+      if [[ "$VERIFY_DOWNLOAD" == "y" || "$VERIFY_DOWNLOAD" == "Y" ]]; then
+        # Download both the file and its signature for verification
+        aria2c --checksum=sha-256=$SHA256 $Link
+        aria2c $Link.sig
+      else
+        # Regular download without signature
+        aria2c --checksum=sha-256=$SHA256 $Link
+      fi
     fi
   else
     echo "Using GitHub CLI to download"
-    gh release download -p '*.tar.zst' -R $USER/$REPO
+    
+    if [[ "$VERIFY_DOWNLOAD" == "y" || "$VERIFY_DOWNLOAD" == "Y" ]]; then
+      # Download both the file and its signature for verification
+      gh release download -p '*.tar.zst' -p '*.tar.zst.sig' -R $USER/$REPO
+    else
+      # Regular download without signature
+      gh release download -p '*.tar.zst' -R $USER/$REPO
+    fi
+  fi
+
+  # If GPG verification is chosen, verify the signature
+  if [[ "$VERIFY_DOWNLOAD" == "y" || "$VERIFY_DOWNLOAD" == "Y" ]]; then
+    echo "Verifying the download with GPG..."
+    gpg --verify "$REPO".tar.zst.sig "$REPO".tar.zst
+
+    if [[ $? -eq 0 ]]; then
+      echo "Download verified successfully."
+    else
+      echo "GPG verification failed."
+    fi
+  else
+    echo "Skipping GPG verification."
   fi
 }
 
