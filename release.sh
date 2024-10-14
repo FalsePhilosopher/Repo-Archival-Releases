@@ -50,12 +50,6 @@ copy() {
     cp notes.md "$RELEASE_FOLDER" && echo "notes.md copying complete." | tee -a "$LOG" || { echo "Failed to copy notes.md." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 }
 
-trim() {
-    cd "$RELEASE_FOLDER/$REPO" || { echo "Failed to navigate to $REPO release repo folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
-    echo "Trimming .git folder" | tee -a "$LOG"
-    rm -rf .git && sleep 10 && echo "Release folder git history removed." | tee -a "$LOG" || { echo "Failed to remove release repo folder git history." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
-}
-
 check() {
     echo "Calculating BLAKE3 checksums..." | tee -a "$LOG"
     find -type f \( -not -name "B3.SUM" \) -exec b3sum '{}' \; >> B3.SUM && echo "BLAKE3 checksum complete." | tee -a "$LOG" || { echo "BLAKE3 checksum error." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
@@ -96,17 +90,18 @@ mkdir -p "$RELEASE_FOLDER"
 echo "Script started at $(date)" > "$LOG"
 }
 
-mkdirs || { echo "Failed to create folders. Is your WORKING_DIR setup properly? Do you have R/W permissions?"; sleep 20; exit 1; }
 if ! command -v zstd &> /dev/null
 then
-    echo "zstd could not be found, please install it." && sleep 20
+    echo "zstd could not be found, please install it."
     exit 1
 fi
 if ! command -v gh &> /dev/null
 then
-    echo "gh could not be found, please install it." && sleep 20
+    echo "gh could not be found, please install it."
     exit 1
 fi
+
+mkdirs || { echo "Failed to create folders. Is your WORKING_DIR setup properly? Do you have R/W permissions?"; sleep 20; exit 1; }
 
 cd "$WORKING_DIR/$REPO" || { echo "Failed to navigate to $REPO repo folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "Pulling repo updates" | tee -a "$LOG"
@@ -147,4 +142,5 @@ rm "$TMP_HASH_FILE" || { echo "Failed to remove temporary hash file." | tee -a "
 echo "SHA256 values updated." | tee -a "$LOG" && sleep 5
 
 gh_release
+
 echo "Script finished sucessfully at $(date)" | tee -a "$LOG"
