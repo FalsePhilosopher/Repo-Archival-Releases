@@ -1,8 +1,10 @@
 #!/bin/bash
 USER='Sample'
 REPO='Sample'
-SHA256='4f07311951cb281362c57583e9fff62d67d84a89'
 Link='https://github.com/$USER/$REPO/releases/latest/download/$REPO.tar.zst'
+SHA256='4f07311951cb281362c57583e9fff62d67d84a89'
+KEY="XXXXXXXXXXXXXXXXX"
+KEY_SERVER="keyserver.ubuntu.com"
 # https://github.com/FalsePhilosopher/Repo-Archival-Releases
 
 obtainium() {
@@ -37,9 +39,22 @@ obtainium() {
       gh release download -p '*.tar.zst' -R $USER/$REPO
     fi
   fi
+}
 
-  # If GPG verification is chosen, verify the signature
-  if [[ "$VERIFY_DOWNLOAD" == "y" || "$VERIFY_DOWNLOAD" == "Y" ]]; then
+GPG() {
+# Check if the public key is already in the keyring
+if ! gpg --list-keys "$KEY" &>/dev/null; then
+    echo "Public key not found in keyring. Importing key from $KEY_SERVER"
+    gpg --keyserver "$KEY_SERVER" --recv-keys "$KEY"
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to import the public key."
+        exit 1
+    fi
+  else
+    echo "Public key already exists in keyring."
+fi
+# If GPG verification is chosen, verify the signature
+if [[ "$VERIFY_DOWNLOAD" == "y" || "$VERIFY_DOWNLOAD" == "Y" ]]; then
     echo "Verifying the download with GPG..."
     gpg --verify "$REPO".tar.zst.sig "$REPO".tar.zst
 
@@ -50,7 +65,7 @@ obtainium() {
     fi
   else
     echo "Skipping GPG verification."
-  fi
+fi
 }
 
 check() {
@@ -61,11 +76,13 @@ check() {
       exit 1
     else
       echo "Using sha256sum for verification"
-      sha256sum -c SHA256
+      sha256sum -c SHA256 && echo "All checksums ok" || echo "checksum failure"
+
     fi
   else
     echo "Using b3sum for verification"
-    b3sum -c B3.SUM
+    b3sum -c B3.SUM && echo "All checksums ok" || echo "checksum failure"
+
   fi
 }
 
@@ -78,6 +95,7 @@ fi
 cd /tmp/ || { echo "Failed to change directory to /tmp/"; exit 1; }
 
 obtainium
+GPG
 
 echo "Extracting $REPO.tar.zst"
 if tar --use-compress-program="zstd -d -T0" -xvf "$REPO.tar.zst" --directory "$HOME/Downloads"; then
@@ -89,6 +107,6 @@ fi
 
 cd "$HOME/Downloads/$REPO/" || { echo "Failed to change to $REPO directory"; exit 1; }
 
-check && echo "All checksums ok" || echo "checksum failure"
+check
 
 echo "All done"

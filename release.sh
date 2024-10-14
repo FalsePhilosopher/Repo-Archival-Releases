@@ -6,6 +6,8 @@
 # Make sure to set the remote repo for gh in your repo with 
 #gh repo set-default username/repo
 
+# If you are using GPG signing make sure you have your key setup on a public key server, if using another key server aside from keyserver.ubuntu.com make sure to change it in the DL scripts.
+
 # --- Cron Job Setup ---
 # 1. Open your crontab editor by running crontab -e
 # 2. Add the following line to the crontab to schedule the script to run automatically.
@@ -19,7 +21,9 @@
 
 #!/bin/bash
 
-SIGN="Y"    # Set SIGN to "Y" or "N" for GPG signing
+SIGN="N"    # Set SIGN to "Y" or "N" for GPG signing
+KEY="XXXXXXXXXXXXXXXXX"
+KEY_SERVER="keyserver.ubuntu.com"
 REPO='sample-name'
 WORKING_DIR="/sample/path/to/parent/folder/"
 
@@ -65,7 +69,7 @@ sign() {
 if [[ "$SIGN" == "y" || "$SIGN" == "Y" ]]; then
     echo "Signing the release"
     cd "$RELEASE_FOLDER" || { echo "Failed to navigate to release folder." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
-    gpg --sign "$ARCHIVE" && echo "$ARCHIVE signed successfully." | tee -a "$LOG" || { echo "Failed to sign $ARCHIVE." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+    gpg --sign "$ARCHIVE" --default-key "$KEY" && echo "$ARCHIVE signed successfully." | tee -a "$LOG" || { echo "Failed to sign $ARCHIVE." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 else
     echo "Skipping GPG signing." | tee -a "$LOG"
 fi
@@ -130,9 +134,9 @@ cat "$RELEASE_FOLDER/SHA256" | sed 's/ .*//' > "$TMP_HASH_FILE" || { echo "Faile
 LATEST_HASH=$(<"$TMP_HASH_FILE") || { echo "Failed to retrieve latest SHA256 hash." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "Expected hash value" | tee -a "$LOG"
 cat "$RELEASE_FOLDER/SHA256" | tee -a "$LOG"
-sed -i "4s/.*/SHA256='$LATEST_HASH'/" "$SHDL" || { echo "Failed to update SHA256 in dl.sh." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
+sed -i "5s/.*/SHA256='$LATEST_HASH'/" "$SHDL" || { echo "Failed to update SHA256 in dl.sh." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "dl.sh SHA256 value." | tee -a "$LOG"
-sed -n '4p' $SHDL | tee -a "$LOG"
+sed -n '5p' $SHDL | tee -a "$LOG"
 sed -i "2s/.*/\$SHA256 = \"$LATEST_HASH\"/" "$PS1DL" || { echo "Failed to update SHA256 in dl.ps1." | tee -a "$LOG"; echo "Script errored at $(date)" | tee -a "$LOG"; exit 1; }
 echo "dl.ps1 SHA256 value" | tee -a "$LOG"
 sed -n '2p' $PS1DL | tee -a "$LOG"
